@@ -6,9 +6,13 @@ Based on [kuberig](https://github.com/kuberig-io/kuberig)
 ## Usage
 
 ```
+import io.github.guai.gr8s.GenerateYaml
+
 plugins {
 	id("io.github.guai.gr8s")
 }
+
+val generateYaml : GenerateYaml by tasks
 
 generateYaml.apply {
 	yamlFile("foo.yaml")
