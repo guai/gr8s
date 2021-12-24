@@ -20,7 +20,11 @@ the<Gr8sPluginExtension>().apply {
 val generateYaml: GenerateYaml by tasks // this task was created by the plugin
 
 val generateRouteYaml by tasks.creating(GenerateYaml::class) { // you can also make more tasks
-	// use kuberig's DSL here
+	doLast {
+		dsl {
+			// use kuberig's DSL here
+		}
+	}
 }
 
 // call generateYaml to generate them all
