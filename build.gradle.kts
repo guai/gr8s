@@ -1,6 +1,6 @@
-import io.k8s.apimachinery.pkg.apis.meta.v1.objectMeta
 import io.github.guai.gr8s.GenerateYaml
 import io.github.guai.gr8s.Gr8sPluginExtension
+import io.k8s.apimachinery.pkg.apis.meta.v1.objectMeta
 import nl.martijndwars.markdown.CompileMarkdownToHtmlTask
 import kotlin.random.Random.Default.nextBytes
 
@@ -19,7 +19,7 @@ the<Gr8sPluginExtension>().apply {
 
 val generateYaml: GenerateYaml by tasks // this task was created by the plugin
 
-val generateRouteYaml by tasks.creating(GenerateYaml::class) { // you can also make more tasks
+val generateRouteYaml by tasks.creating(GenerateYaml::class) { // you can make more tasks
 	doLast {
 		dsl {
 			// use kuberig's DSL here
@@ -39,23 +39,26 @@ compileMarkdownToHtml.apply {
 }
 
 
-val fileToReuse = generateYaml.yamlFile("nginx-static-example.yaml")
-
 val generateReadmeConfigMapYaml by tasks.creating(GenerateYaml::class) {
 	dependsOn(compileMarkdownToHtml)
 
 	doLast {
-		// you can append to existing file
-		dsl(fileToReuse) {
-			// but then you still have to pass an empty string. that's how kuberig creates DSL
-			v1.configMap("") {
+		dsl {
+			// first usage of this file
+			v1.configMap("nginx-static-example.yaml") {
 				metadata {
-					name("html-configmap")
+					name("html")
 				}
 				data("index.html", compileMarkdownToHtml.outputFile.asFile.get().readText())
 			}
+			// second usage. yaml would be appended
+			v1.secret("nginx-static-example.yaml") {
+				metadata {
+					name("image")
+				}
+				data("ctrl-q.png", file("ctrl-q.png").readBytes())
+			}
 		}
-
 	}
 }
 
@@ -68,10 +71,9 @@ val meta = objectMeta {
 
 generateYaml.apply {
 	doLast {
-		// same file used in two tasks
-		dsl(fileToReuse) {
-
-			apps.v1.deployment("") {
+		dsl {
+			// same here. append
+			apps.v1.deployment("nginx-static-example.yaml") {
 				metadata(meta)
 				spec {
 					selector {
@@ -98,18 +100,30 @@ generateYaml.apply {
 									}
 									volumeMounts {
 										volumeMount {
-											mountPath("/usr/share/nginx/html")
-											name("html-configmap-volume")
+											mountPath("/usr/share/nginx/html/index.html")
+											name("html-volume")
+											subPath("index.html")
+										}
+										volumeMount {
+											mountPath("/usr/share/nginx/html/ctrl-q.png")
+											name("image-volume")
+											subPath("ctrl-q.png")
 										}
 									}
 								}
 							}
 							volumes {
 								volume {
-									name("html-configmap-volume")
+									name("html-volume")
 									configMap {
-										name("html-configmap")
+										name("html")
 //										defaultMode(Integer.parseInt("744", 8))
+									}
+								}
+								volume {
+									name("image-volume")
+									secret {
+										secretName("image")
 									}
 								}
 							}
@@ -118,7 +132,7 @@ generateYaml.apply {
 				}
 			}
 
-			v1.service("") {
+			v1.service("nginx-static-example.yaml") {
 				metadata(meta)
 				spec {
 					type("ClusterIP")
@@ -139,12 +153,9 @@ generateYaml.apply {
 }
 
 generateRouteYaml.apply {
-	// or you can first declare a file
-	yamlFile("route.yaml")
-
 	doLast {
-		// and then use it here by name
 		dsl {
+			// this goes to its own file
 			route.openshift.io.v1.route("route.yaml") {
 				metadata(meta)
 				spec {
@@ -163,7 +174,7 @@ generateRouteYaml.apply {
 
 		// or perhaps you want to print the yaml to console
 		dsl(writerSupplier = { System.out.writer() }) {
-			v1.secret("") {
+			v1.secret("will be ignored") {
 				data("random.txt", nextBytes(20))
 			}
 		}

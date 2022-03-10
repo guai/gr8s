@@ -15,8 +15,6 @@ plugins {
 val generateYaml : GenerateYaml by tasks
 
 generateYaml.apply {
-	yamlFile("foo.yaml")
-
 	doLast {
 		dsl.v1.configMap("foo.yaml") {
 			metadata {

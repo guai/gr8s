@@ -6,7 +6,6 @@ import io.kuberig.dsl.model.BasicResource
 import kinds.DslKindsRoot
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.getByType
 import java.io.File
 import java.io.FileWriter
@@ -14,7 +13,6 @@ import java.io.Writer
 import java.nio.charset.Charset
 import java.util.function.Supplier
 
-//@UntrackedTask(because = "Don't call it if you don't need it")
 open class GenerateYaml : DefaultTask(), DslResourceSink {
 
 	private val extension: Gr8sPluginExtension = project.extensions.getByType()
@@ -26,7 +24,6 @@ open class GenerateYaml : DefaultTask(), DslResourceSink {
 		outputs.upToDateWhen { false }
 	}
 
-	open fun yamlFile(name: String, file: File? = null): File = extension.yamlFile(name, file)
 
 	@get:Internal
 	val dsl by lazy { DslKindsRoot(this) }
@@ -35,20 +32,13 @@ open class GenerateYaml : DefaultTask(), DslResourceSink {
 
 	fun dsl(writerSupplier: Supplier<Writer>, block: DslKindsRoot.() -> Unit = {}) = DslKindsRoot(YamlOutputSink(writerSupplier)).also { block(it) }
 
-	fun dsl(yamlFile: File, block: DslKindsRoot.() -> Unit = {}) = dsl({ yamlFile.appendWriter() }, block)
-
 	private fun File.appendWriter(charset: Charset = Charsets.UTF_8): Writer = FileWriter(this, charset, true).buffered()
 
 	override fun <T : BasicResource> add(resource: DslResource<T>) {
-		val yamlFile = extension.yamlFiles[resource.alias]
-				?: error("declare yamlFile(\"${resource.alias}\") in the configuration block first")
-		yamlFile.appendWriter().use {
+		val file = extension.yamlDir.also { it.mkdirs() }.resolve(resource.alias)
+		val writer = if (extension.yamlFiles.add(file)) file.writer() else file.appendWriter()
+		writer.use {
 			it.write(objectMapper.writeValueAsString(resource.dslType.toValue()))
 		}
-	}
-
-	@TaskAction
-	fun doWork() {
-		extension.deleteYamlFiles
 	}
 }
