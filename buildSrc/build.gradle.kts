@@ -1,5 +1,5 @@
 group = "io.github.guai"
-version = "1.2"
+version = "1.3"
 description = "Gradle plugin which allows using typed DSL for generating kubernetes/openshift YAML files"
 
 repositories.addAll(rootProject.buildscript.repositories)
@@ -34,13 +34,9 @@ pluginBundle {
 
 dependencies {
 	implementation("io.kuberig:kuberig-core:0.0.47")
-	implementation("io.kuberig:kuberig-dsl-base:0.1.6-RC5a")
-	implementation("io.kuberig.dsl.kubernetes:kuberig-dsl-openshift-v4.6.0:0.1.4")
+	api("io.kuberig:kuberig-dsl-base:0.1.6-RC5a")
+	api("io.kuberig.dsl.kubernetes:kuberig-dsl-openshift-v4.6.0:0.1.4")
 
 	//	implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.12.3") //java.lang.IllegalArgumentException: Conflicting getter definitions for property "iscsi": io.k8s.api.core.v1.Volume#getIscsi() vs io.k8s.api.core.v1.Volume#getCsi()
-	api("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml") {
-		version {
-			strictly("2.11.4")
-		}
-	}
+	api("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.11.4")
 }
