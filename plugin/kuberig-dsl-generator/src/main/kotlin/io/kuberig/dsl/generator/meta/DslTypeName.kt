@@ -51,7 +51,7 @@ class DslTypeName(val rawName : String) {
     fun methodName() : String {
         val typeShortName = this.typeShortName()
 
-        return typeShortName.substring(0, 1).toLowerCase() + typeShortName.substring(1)
+        return typeShortName.substring(0, 1).lowercase() + typeShortName.substring(1)
     }
 
     override fun equals(other: Any?): Boolean {

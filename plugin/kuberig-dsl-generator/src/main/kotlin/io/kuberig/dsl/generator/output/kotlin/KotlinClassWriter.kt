@@ -158,7 +158,7 @@ class KotlinClassWriter(private val typeName : DslTypeName,
 
                 if (nextChar == '-') {
                     if (nameCharsIterator.hasNext()) {
-                        camelCasedName += nameCharsIterator.nextChar().toUpperCase()
+                        camelCasedName += nameCharsIterator.nextChar().uppercase()
                     }
                 } else {
                     camelCasedName += nextChar
@@ -210,7 +210,7 @@ class KotlinClassWriter(private val typeName : DslTypeName,
     }
 
     fun typeInterface(interfaceDeclaration : String,
-                      declarationTypes : List<String>) {
+                      declarationTypes : List<String> = listOf()) {
         declarationTypes.forEach(this::typeImport)
 
         this.current.interfaceType = interfaceDeclaration
@@ -473,7 +473,8 @@ class KotlinClassWriter(private val typeName : DslTypeName,
 
             if (classDetail.typeConstructorParameters.isNotEmpty()) {
                 this.writer.write("(")
-                this.writer.newLine()
+                if (classDetail.typeConstructorParameters.count() > 1)
+                    this.writer.newLine()
 
                 val constructorParamIterator = classDetail.typeConstructorParameters.iterator()
 

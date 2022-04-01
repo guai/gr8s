@@ -17,6 +17,7 @@
 package io.kuberig.dsl.generator.meta.attributes
 
 import io.kuberig.dsl.generator.meta.DslTypeName
+import java.util.*
 
 abstract class DslAttributeMeta(
     val name: String,
@@ -33,7 +34,7 @@ abstract class DslAttributeMeta(
 
         val wrappingNeeded = name.startsWith('$')
 
-        val methodName = "get" + this.name.substring(0, splitIndex).toUpperCase() + this.name.substring(splitIndex)
+        val methodName = "get" + this.name.substring(0, splitIndex).uppercase() + this.name.substring(splitIndex)
 
         return if (wrappingNeeded) {
             "`$methodName`"

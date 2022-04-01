@@ -53,7 +53,7 @@ class DslKindContainer(val name : String) {
     }
 
     fun typeName() : String {
-        return "Dsl${name.capitalize()}Root"
+        return "Dsl${name.replaceFirstChar { it.titlecase() }}Root"
     }
 
 }

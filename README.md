@@ -1,22 +1,22 @@
 # gr8s
 
-Gradle plugin which allows using typed DSL for generating kubernetes/openshift YAML files.  
+Gradle plugin which allows using typed DSL for generating kubernetes/openshift files.  
 Based on [kuberig](https://github.com/kuberig-io/kuberig)
 
 ## Usage
 
 ```
-import io.github.guai.gr8s.GenerateYaml
+import io.github.guai.gr8s.Gr8sTask
 
 plugins {
 	id("io.github.guai.gr8s")
 }
 
-val generateYaml : GenerateYaml by tasks
+val gr8s : Gr8sTask by tasks
 
-generateYaml.apply {
+gr8s.apply {
 	doLast {
-		dsl.v1.configMap("foo.yaml") {
+		dsl.v1.configMap("foo.json") {
 			metadata {
 				name("foo")
 			}

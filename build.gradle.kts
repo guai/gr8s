@@ -1,4 +1,4 @@
-import io.github.guai.gr8s.GenerateYaml
+import io.github.guai.gr8s.Gr8sTask
 import io.github.guai.gr8s.Gr8sPluginExtension
 import io.k8s.apimachinery.pkg.apis.meta.v1.objectMeta
 import nl.martijndwars.markdown.CompileMarkdownToHtmlTask
@@ -14,12 +14,12 @@ plugins {
 
 
 the<Gr8sPluginExtension>().apply {
-	yamlDir = buildDir.resolve("yaml") // you can configure output dir. 'build/yaml' is the default
+	outputDir = buildDir.resolve("gr8s") // you can configure output dir. 'build/gr8s' is the default
 }
 
-val generateYaml: GenerateYaml by tasks // this task was created by the plugin
+val gr8s: Gr8sTask by tasks // this task was created by the plugin
 
-val generateRouteYaml by tasks.creating(GenerateYaml::class) { // you can make more tasks
+val route by tasks.creating(Gr8sTask::class) { // you can make more tasks
 	doLast {
 		dsl {
 			// use kuberig's DSL here
@@ -27,8 +27,8 @@ val generateRouteYaml by tasks.creating(GenerateYaml::class) { // you can make m
 	}
 }
 
-// call generateYaml to generate them all
-require(generateYaml.taskDependencies.getDependencies(generateYaml).contains(generateRouteYaml))
+// call gr8s to generate them all
+require(gr8s.taskDependencies.getDependencies(gr8s).contains(route))
 
 
 val compileMarkdownToHtml: CompileMarkdownToHtmlTask by tasks
@@ -39,20 +39,20 @@ compileMarkdownToHtml.apply {
 }
 
 
-val generateReadmeConfigMapYaml by tasks.creating(GenerateYaml::class) {
+val configMap by tasks.creating(Gr8sTask::class) {
 	dependsOn(compileMarkdownToHtml)
 
 	doLast {
 		dsl {
 			// first usage of this file
-			v1.configMap("nginx-static-example.yaml") {
+			v1.configMap("nginx-static-example-index.json") {
 				metadata {
 					name("html")
 				}
 				data("index.html", compileMarkdownToHtml.outputFile.asFile.get().readText())
 			}
-			// second usage. yaml would be appended
-			v1.secret("nginx-static-example.yaml") {
+			// second usage. content would be appended
+			v1.secret("nginx-static-example-png.json") {
 				metadata {
 					name("image")
 				}
@@ -69,11 +69,11 @@ val meta = objectMeta {
 	name("nginx-static-example")
 }
 
-generateYaml.apply {
+gr8s.apply {
 	doLast {
 		dsl {
 			// same here. append
-			apps.v1.deployment("nginx-static-example.yaml") {
+			apps.v1.deployment("nginx-static-example-deployment.json") {
 				metadata(meta)
 				spec {
 					selector {
@@ -132,7 +132,7 @@ generateYaml.apply {
 				}
 			}
 
-			v1.service("nginx-static-example.yaml") {
+			v1.service("nginx-static-example-service.json") {
 				metadata(meta)
 				spec {
 					type("ClusterIP")
@@ -152,11 +152,11 @@ generateYaml.apply {
 	}
 }
 
-generateRouteYaml.apply {
+route.apply {
 	doLast {
 		dsl {
 			// this goes to its own file
-			route.openshift.io.v1.route("route.yaml") {
+			route.openshift.io.v1.route("route.json") {
 				metadata(meta)
 				spec {
 					host("nginx-static-example.${deploymentHost}")
@@ -172,7 +172,7 @@ generateRouteYaml.apply {
 			}
 		}
 
-		// or perhaps you want to print the yaml to console
+		// or perhaps you want to print to console
 		dsl(writerSupplier = { System.out.writer() }) {
 			v1.secret("will be ignored") {
 				data("random.txt", nextBytes(20))
@@ -181,3 +181,4 @@ generateRouteYaml.apply {
 
 	}
 }
+

@@ -39,6 +39,7 @@ import io.swagger.models.Swagger
 import io.swagger.models.properties.*
 import io.swagger.parser.SwaggerParser
 import java.io.File
+import java.util.*
 
 class SwaggerDslMetaProducer(private val swaggerFile: File) : DslMetaProducer {
 
@@ -52,7 +53,7 @@ class SwaggerDslMetaProducer(private val swaggerFile: File) : DslMetaProducer {
     override fun provide(): DslMeta {
         this.spec = SwaggerParser().read(swaggerFile.absolutePath)
 
-        if (spec.info.title.toLowerCase().contains("openshift")) {
+        if (spec.info.title.lowercase().contains("openshift")) {
             this.dslMeta = DslMeta(
                 DslPlatformSpecifics(
                     listOf("io.k8s", "com.github")
@@ -126,7 +127,7 @@ class SwaggerDslMetaProducer(private val swaggerFile: File) : DslMetaProducer {
 
     private fun kubernetesGroupVersionKindToKind(rawMap: Map<*, *>): Kind {
 
-        val normalizedGroupVersionKind = rawMap.mapKeys { (it.key as String).toLowerCase() }
+        val normalizedGroupVersionKind = rawMap.mapKeys { (it.key as String).lowercase() }
 
         return Kind(
                 (normalizedGroupVersionKind["group"] ?: error("No group found group-version-kind")) as String,
@@ -329,7 +330,7 @@ class SwaggerDslMetaProducer(private val swaggerFile: File) : DslMetaProducer {
 
                         check(valueType != "") { "Don't know how to handle type split [$split] for $typeName" }
 
-                        sealedTypes[split.toLowerCase()] =
+                        sealedTypes[split.lowercase()] =
                             DslTypeName(valueType)
                     }
 
@@ -396,7 +397,7 @@ class SwaggerDslMetaProducer(private val swaggerFile: File) : DslMetaProducer {
             val documentation = property.description ?: ""
             val required = this.isPropertyRequired(dslClassInfo, property)
 
-            if (!documentation.toLowerCase().contains("read-only")) {
+            if (!documentation.lowercase().contains("read-only")) {
                 propertyPosition++
 
                 if (this.isListProperty(property)) {
@@ -522,7 +523,7 @@ class SwaggerDslMetaProducer(private val swaggerFile: File) : DslMetaProducer {
                     Even if it is used in multiple places and even if the type exists in the standard platform types
                     they do not always reference them (not sure this is even possible).
                      */
-                    propertyType = rawOwningTypeName + owningAttributeName.capitalize()
+                    propertyType = rawOwningTypeName + owningAttributeName.replaceFirstChar { it.titlecase() }
                     if (!this.dslMeta.typeMeta.containsKey(DslTypeName(propertyType).absoluteName)) {
                         if (!this.additionalPropertyDefinitions.containsKey(propertyType)) {
                             val additionalDslClassInfo = DslClassInfoObjectPropertyAdapter.toDslClassInfo(property)

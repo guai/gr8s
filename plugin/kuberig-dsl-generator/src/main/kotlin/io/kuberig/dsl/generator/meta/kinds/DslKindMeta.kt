@@ -54,7 +54,7 @@ class DslKindMeta(val typeName : DslTypeName,
         }
 
         return if (firstLowerCaseLetterIndex == -1) {
-            kind.toLowerCase()
+            kind.lowercase()
         }
         else {
             val splitIndex = if (firstLowerCaseLetterIndex == 1) {
@@ -63,7 +63,7 @@ class DslKindMeta(val typeName : DslTypeName,
                 firstLowerCaseLetterIndex - 1
             }
 
-            return kind.substring(0, splitIndex).toLowerCase() + kind.substring(splitIndex)
+            return kind.substring(0, splitIndex).lowercase() + kind.substring(splitIndex)
         }
     }
 

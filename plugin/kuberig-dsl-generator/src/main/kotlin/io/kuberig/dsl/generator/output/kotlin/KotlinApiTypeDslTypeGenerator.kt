@@ -147,7 +147,7 @@ class KotlinApiTypeDslTypeGenerator(private val dslMeta : DslMeta,
 
                 if (this.dslMeta.isPlatformApiType(typeMeta.containedType)) {
                     /*
-                    writer.write("    fun ${typeMeta.name.toLowerCase()}(init : ${typeMeta.containedType.typeShortName()}.() -> Unit) : ${typeMeta.containedType.typeShortName()} {")
+                    writer.write("    fun ${typeMeta.name.lowercase()}(init : ${typeMeta.containedType.typeShortName()}.() -> Unit) : ${typeMeta.containedType.typeShortName()} {")
                     writer.write("        val attr = ${typeMeta.containedType.typeShortName()}()")
                     writer.write("        attr.init()")
                     writer.write("        this.value = attr")
@@ -159,7 +159,7 @@ class KotlinApiTypeDslTypeGenerator(private val dslMeta : DslMeta,
 
             } else {
                 classWriter.typeMethod(
-                    methodName = typeMeta.typeName.typeShortName().toLowerCase(),
+                    methodName = typeMeta.typeName.typeShortName().lowercase(),
                     methodParameters = listOf(
                         Pair("contained", typeMeta.containedType.typeShortName())
                     ),

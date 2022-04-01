@@ -53,7 +53,7 @@ class KotlinApiTypeGenerator(
                 val newAttributes = mutableMapOf<String, DslAttributeMeta>()
                 newAttributes.putAll(currentAttributes)
 
-                val missingValueProvider = requiredAttribute.value;
+                val missingValueProvider = requiredAttribute.value
                 newAttributes[requiredAttributeName] = missingValueProvider()
 
                 typeMeta.attributes = newAttributes.toMap()
@@ -152,7 +152,7 @@ class KotlinApiTypeGenerator(
 
     private fun generateContainerType(typeName: DslTypeName, typeMeta: DslContainerTypeMeta) {
         val serializerType = DslTypeName(
-            typeName.packageName() + "." + typeMeta.typeName.typeShortName() + "_Serializer"
+            typeName.packageName() + "." + typeMeta.typeName.typeShortName() + "_Adapter"
         )
 
         val kotlinClassWriter = KotlinClassWriter(typeName, this.classWriterProducer)
@@ -162,10 +162,6 @@ class KotlinApiTypeGenerator(
             classWriter.typeDocumentation(typeMeta.description)
 
             classWriter.typeImport(serializerType)
-            classWriter.typeAnnotation(
-                "com.fasterxml.jackson.databind.annotation.JsonSerialize",
-                "@JsonSerialize(using = ${serializerType.typeShortName()}::class)"
-            )
 
             classWriter.typeConstructorParameter(
                 listOf("val"),
@@ -178,30 +174,34 @@ class KotlinApiTypeGenerator(
         val kotlinSerializerWriter = KotlinClassWriter(serializerType, this.classWriterProducer)
         kotlinSerializerWriter.use { serializerWriter ->
 
+            kotlinSerializerWriter.typeImport("com.squareup.moshi.JsonAdapter")
+            kotlinSerializerWriter.typeImport("com.squareup.moshi.JsonReader")
+            kotlinSerializerWriter.typeImport("com.squareup.moshi.JsonWriter")
+
             serializerWriter.typeInterface(
-                "JsonSerializer<${typeMeta.typeName.typeShortName()}>()",
-                listOf(
-                    "com.fasterxml.jackson.databind.JsonSerializer"
-                )
+                "JsonAdapter<${typeMeta.typeName.typeShortName()}>()"
             )
 
-            val writeMethod = this.determineJsonWriteMethod(typeMeta.containedType)
+            val writeType = determineJsonWriteType(typeMeta.containedType)
 
             serializerWriter.typeMethod(
                 modifiers = listOf("override"),
-                methodName = "serialize",
+                methodName = "toJson",
                 methodParameters = listOf(
-                    Pair("value", "${typeMeta.typeName.typeShortName()}?"),
-                    Pair("gen", "JsonGenerator?"),
-                    Pair("serializers", "SerializerProvider?")
+                    Pair("writer", "JsonWriter"),
+                    Pair("value", "${typeMeta.typeName.typeShortName()}?")
                 ),
-                methodCode = listOf(
-                    "gen!!.$writeMethod(value?.value)"
+                methodCode = listOf("writer.jsonValue(value?.value as $writeType?)")
+            )
+
+            serializerWriter.typeMethod(
+                modifiers = listOf("override"),
+                methodName = "fromJson",
+                methodParameters = listOf(
+                    Pair("reader", "JsonReader")
                 ),
-                methodTypeDependencies = listOf(
-                    "com.fasterxml.jackson.core.JsonGenerator",
-                    "com.fasterxml.jackson.databind.SerializerProvider"
-                )
+                methodReturnType = "${typeMeta.typeName.typeShortName()}?",
+                methodCode = listOf("""TODO("Not yet implemented")""")
             )
 
         }
@@ -210,7 +210,7 @@ class KotlinApiTypeGenerator(
     private fun generatedSealedType(typeName: DslTypeName, typeMeta: DslSealedTypeMeta) {
 
         val serializerType = DslTypeName(
-            typeName.packageName() + "." + typeMeta.typeName.typeShortName() + "_Serializer"
+            typeName.packageName() + "." + typeMeta.typeName.typeShortName() + "_Adapter"
         )
 
         val kotlinClassWriter = KotlinClassWriter(typeName, this.classWriterProducer, "sealed class")
@@ -219,10 +219,6 @@ class KotlinApiTypeGenerator(
             classWriter.typeDocumentation(typeMeta.description)
 
             classWriter.typeImport(serializerType)
-            classWriter.typeAnnotation(
-                "com.fasterxml.jackson.databind.annotation.JsonSerialize",
-                "@JsonSerialize(using = ${serializerType.typeShortName()}::class)"
-            )
 
             // the sub types
             typeMeta.sealedTypes.forEach { (name, valueTypeName) ->
@@ -247,18 +243,16 @@ class KotlinApiTypeGenerator(
         val kotlinSerializerWriter = KotlinClassWriter(serializerType, this.classWriterProducer)
         kotlinSerializerWriter.use { serializerWriter ->
 
+            kotlinSerializerWriter.typeImport("com.squareup.moshi.JsonAdapter")
+            kotlinSerializerWriter.typeImport("com.squareup.moshi.JsonReader")
+            kotlinSerializerWriter.typeImport("com.squareup.moshi.JsonWriter")
+
             serializerWriter.typeInterface(
-                "JsonSerializer<${typeMeta.typeName.typeShortName()}>()",
-                listOf(
-                    "com.fasterxml.jackson.databind.JsonSerializer"
-                )
+                "JsonAdapter<${typeMeta.typeName.typeShortName()}>()"
             )
 
             val serializerCode = mutableListOf<String>()
-            val serializerTypeDependencies = mutableListOf(
-                "com.fasterxml.jackson.core.JsonGenerator",
-                "com.fasterxml.jackson.databind.SerializerProvider"
-            )
+            val serializerTypeDependencies = mutableListOf<String>()
 
             serializerCode.add("when (value) {")
             typeMeta.sealedTypes.forEach { (name, valueTypeName) ->
@@ -266,22 +260,31 @@ class KotlinApiTypeGenerator(
 
                 serializerTypeDependencies.add(subTypeName.absoluteName)
 
-                val writeMethod = this.determineJsonWriteMethod(valueTypeName)
+                val writeType = determineJsonWriteType(valueTypeName)
 
-                serializerCode.add("    is ${subTypeName.typeShortName()} -> gen!!.$writeMethod(value.value)")
+                serializerCode.add("    is ${subTypeName.typeShortName()} -> writer.value(value.value as $writeType?)")
             }
             serializerCode.add("}")
 
             serializerWriter.typeMethod(
                 modifiers = listOf("override"),
-                methodName = "serialize",
+                methodName = "toJson",
                 methodParameters = listOf(
-                    Pair("value", "${typeMeta.typeName.typeShortName()}?"),
-                    Pair("gen", "JsonGenerator?"),
-                    Pair("serializers", "SerializerProvider?")
+                    Pair("writer", "JsonWriter"),
+                    Pair("value", "${typeMeta.typeName.typeShortName()}?")
                 ),
                 methodCode = serializerCode,
                 methodTypeDependencies = serializerTypeDependencies
+            )
+
+            serializerWriter.typeMethod(
+                modifiers = listOf("override"),
+                methodName = "fromJson",
+                methodParameters = listOf(
+                    Pair("reader", "JsonReader")
+                ),
+                methodReturnType = "${typeMeta.typeName.typeShortName()}?",
+                methodCode = listOf("""TODO("Not yet implemented")""")
             )
         }
 
@@ -299,12 +302,7 @@ class KotlinApiTypeGenerator(
     /**
      * TODO this most likely does not cover everything
      */
-    private fun determineJsonWriteMethod(typeName: DslTypeName): String {
-        return when {
-            "Int" == typeName.typeShortName() -> "writeNumber"
-            "String" == typeName.typeShortName() -> "writeString"
-            else -> "writeObject"
-        }
-    }
+    private fun determineJsonWriteType(typeName: DslTypeName): String =
+        typeName.typeShortName().takeIf { it == "Int" || it == "String" } ?: "Any"
 
 }

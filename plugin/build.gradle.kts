@@ -1,11 +1,12 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 group = "io.github.guai"
-version = "1.2"
-description = "Gradle plugin which allows using typed DSL for generating kubernetes/openshift YAML files"
+version = "2.0"
+description = "Gradle plugin which allows using typed DSL for generating kubernetes/openshift definition files"
 
 
 plugins {
+    kotlin("jvm") version "1.6.10"
     `kotlin-dsl`
     `java-gradle-plugin`
     id("com.gradle.plugin-publish") version "0.18.0"
@@ -16,6 +17,12 @@ plugins {
 repositories {
     mavenCentral()
     gradlePluginPortal()
+}
+
+buildscript {
+    dependencies {
+        classpath(platform("org.jetbrains.kotlin:kotlin-bom:1.6.10"))
+    }
 }
 
 gradlePlugin {
@@ -44,6 +51,7 @@ sourceSets {
         java.srcDir("kuberig-dsl-base/src/main/kotlin")
         java.srcDir("kuberig-core/src/main/kotlin")
         java.srcDir("kuberig-annotations/src/main/kotlin")
+        java.srcDir("moshi-kotlin/src/main/kotlin")
         resources.srcDir("openapi-specs")
         java.srcDir(buildDir.resolve("generated-src/main/kotlin"))
     }
@@ -60,6 +68,10 @@ tasks.withType<KotlinCompile> {
 }
 
 dependencies {
+    api(kotlin("reflect"))
+    api("com.squareup.moshi:moshi:1.13.0")
+    implementation("com.squareup.okio:okio:3.0.0")
+
     implementation("io.swagger:swagger-parser:1.0.58")
     implementation("org.slf4j:slf4j-api:1.7.36")
 
@@ -67,26 +79,4 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 }
 
-dependencies {
-
-    listOf(
-            "com.fasterxml.jackson.core:jackson-core",
-            "com.fasterxml.jackson.core:jackson-databind",
-            "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml",
-            "com.fasterxml.jackson.module:jackson-module-kotlin",
-    ).forEach {
-        implementation(it) { version { strictly("2.11.4") } }
-    }
-
-    implementation("com.konghq:unirest-java:3.13.7")
-
-    implementation("org.bouncycastle:bcprov-jdk15on:1.70")
-    implementation("org.bouncycastle:bcpkix-jdk15on:1.70")
-
-    implementation("com.jayway.jsonpath:json-path:2.7.0")
-
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.2")
-
-    testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
-}
+tasks["javadoc"].enabled = false
