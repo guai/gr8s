@@ -119,6 +119,12 @@ generateYaml.apply {
 										name("html")
 //										defaultMode(Integer.parseInt("744", 8))
 									}
+									csi {
+										driver("foo")
+									}
+									iscsi {
+										iqn("foo")
+									}
 								}
 								volume {
 									name("image-volume")
