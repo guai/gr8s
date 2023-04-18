@@ -22,9 +22,7 @@ internal val objectMapper by lazy {
 		}
 		registerModule(byteArrayModule)
 
-		addMixIn(Volume::class.java, VolumeMixin::class.java)
-
-		setSerializationInclusion(JsonInclude.Include.NON_DEFAULT) // todo seems to affect nothing
+		setSerializationInclusion(JsonInclude.Include.NON_DEFAULT) // exclude nulls and empty values
 	}
 }
 
