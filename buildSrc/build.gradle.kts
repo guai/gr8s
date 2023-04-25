@@ -1,5 +1,5 @@
 group = "io.github.guai"
-version = "1.4.1"
+version = "1.4.2"
 description = "Gradle plugin which allows using typed DSL for generating kubernetes/openshift YAML files"
 
 repositories.addAll(rootProject.buildscript.repositories)
@@ -37,5 +37,5 @@ dependencies {
 	api("io.kuberig:kuberig-dsl-base:0.1.6-RC5a")
 	api("io.kuberig.dsl.kubernetes:kuberig-dsl-openshift-v4.6.0:0.1.4")
 
-	api("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.0-rc3")
+	api("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.0")
 }
